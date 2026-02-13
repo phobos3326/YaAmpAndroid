@@ -15,9 +15,12 @@ class MusicRepository {
 
         // Get user info
         val response = api.getAccountStatus()
-        val userId = response.result?.uid?.toString()
+        val userId = response.result?.account?.uid
             ?: throw IllegalStateException(response.error ?: "Invalid auth token")
-        currentUserId = userId
+        if (userId <= 0) {
+            throw IllegalStateException("Invalid account uid: $userId")
+        }
+        currentUserId = userId.toString()
     }
 
     suspend fun search(query: String, type: String = "all"): Result<SearchResult> = 
@@ -70,18 +73,37 @@ class MusicRepository {
             
             val response = api.getLikedTracks(userId)
             val trackShorts = response.result?.library?.tracks ?: emptyList()
-            
+
             if (trackShorts.isNotEmpty()) {
-                val trackIds = trackShorts.map { "${it.id}:${it.albumId}" }
-                val tracksResponse = api.getTracks(trackIds)
-                
+                val trackIds = trackShorts.mapNotNull { track ->
+                    val albumId = track.albumId
+                    if (albumId.isNullOrBlank()) {
+                        null
+                    } else {
+                        "${track.id}:$albumId"
+                    }
+                }
+
+                if (trackIds.isEmpty()) {
+                    return@withContext Result.failure(
+                        Exception("Liked tracks response missing albumId values")
+                    )
+                }
+
+                val tracksResponse = api.getTracks(TracksRequest(trackIds))
+
                 if (tracksResponse.result != null) {
                     Result.success(tracksResponse.result)
                 } else {
                     Result.failure(Exception(tracksResponse.error ?: "Unknown error"))
                 }
             } else {
-                Result.success(emptyList())
+                val isUnauthorized = response.error?.contains("Unauthorized", ignoreCase = true) == true
+                if (isUnauthorized) {
+                    Result.failure(Exception("Authorization expired. Please sign in again."))
+                } else {
+                    Result.success(emptyList())
+                }
             }
         } catch (e: Exception) {
             Result.failure(e)

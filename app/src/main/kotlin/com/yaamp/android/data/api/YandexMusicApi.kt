@@ -56,7 +56,7 @@ interface YandexMusicApi {
     // Get tracks by IDs
     @POST("tracks")
     suspend fun getTracks(
-        @Body trackIds: List<String>
+        @Body body: TracksRequest
     ): YandexMusicResponse<List<Track>>
 
     // Get download info
@@ -79,7 +79,7 @@ interface YandexMusicApi {
 
     // Get account info
     @GET("account/status")
-    suspend fun getAccountStatus(): YandexMusicResponse<UserInfo>
+    suspend fun getAccountStatus(): YandexMusicResponse<AccountStatus>
 }
 
 // Additional data classes for API responses

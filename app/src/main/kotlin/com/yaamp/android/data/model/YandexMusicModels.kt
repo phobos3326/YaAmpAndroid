@@ -134,9 +134,18 @@ data class StationTrack(
     val track: Track
 )
 
-// User info
-data class UserInfo(
+// Account status
+ data class AccountStatus(
+    val account: Account? = null
+ )
+
+ data class Account(
     val uid: Long,
     val login: String,
-    val displayName: String
-)
+    val displayName: String? = null
+ )
+
+// Tracks request
+ data class TracksRequest(
+    val trackIds: List<String> = emptyList()
+ )
