@@ -1,6 +1,7 @@
 package com.yaamp.android.ui.viewmodel
 
 import android.app.Application
+import android.content.Context
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.yaamp.android.data.model.*
@@ -20,6 +21,9 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private val repository = MusicRepository()
     val playerManager = PlayerManager(application, repository)
 
+    // SharedPreferences для сохранения токена
+    private val prefs = application.getSharedPreferences("yaamp_prefs", Context.MODE_PRIVATE)
+
     private val _uiState = MutableStateFlow<UiState>(UiState.Success)
     val uiState: StateFlow<UiState> = _uiState.asStateFlow()
 
@@ -32,23 +36,55 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private val _playlists = MutableStateFlow<List<Playlist>>(emptyList())
     val playlists: StateFlow<List<Playlist>> = _playlists.asStateFlow()
 
+    // Состояние авторизации
+    private val _isAuthenticated = MutableStateFlow(false)
+    val isAuthenticated: StateFlow<Boolean> = _isAuthenticated.asStateFlow()
+
     // Expose player state
     val currentTrack = playerManager.currentTrack
     val isPlaying = playerManager.isPlaying
     val playlist = playerManager.playlist
     val currentIndex = playerManager.currentIndex
 
+    init {
+        // Проверяем сохраненный токен при запуске
+        checkSavedToken()
+    }
+
+    private fun checkSavedToken() {
+        val savedToken = prefs.getString("auth_token", null)
+        if (!savedToken.isNullOrBlank()) {
+            setAuthToken(savedToken)
+        }
+    }
+
     fun setAuthToken(token: String) {
         viewModelScope.launch {
             try {
                 _uiState.value = UiState.Loading
                 repository.setAuthToken(token)
+
+                // Сохраняем токен
+                prefs.edit().putString("auth_token", token).apply()
+
+                _isAuthenticated.value = true
                 _uiState.value = UiState.Success
                 loadUserPlaylists()
             } catch (e: Exception) {
                 _uiState.value = UiState.Error(e.message ?: "Authentication failed")
+                _isAuthenticated.value = false
+
+                // Удаляем неверный токен
+                prefs.edit().remove("auth_token").apply()
             }
         }
+    }
+
+    fun logout() {
+        prefs.edit().remove("auth_token").apply()
+        _isAuthenticated.value = false
+        _searchResults.value = null
+        _playlists.value = emptyList()
     }
 
     fun search(query: String) {
@@ -138,6 +174,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 result.onSuccess { tracks ->
                     if (tracks.isNotEmpty()) {
                         playerManager.setPlaylist(tracks)
+                    } else {
+                        _uiState.value = UiState.Error("No liked tracks found")
                     }
                     _uiState.value = UiState.Success
                 }.onFailure { error ->

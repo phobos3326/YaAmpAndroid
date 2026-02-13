@@ -6,16 +6,13 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
 import androidx.compose.foundation.layout.*
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
 import com.yaamp.android.ui.theme.YaampTheme
 import com.yaamp.android.ui.viewmodel.MainViewModel
 import com.yaamp.android.ui.screens.MainScreen
-import kotlinx.coroutines.launch
+import com.yaamp.android.ui.screens.AuthScreen
 
 class MainActivity : ComponentActivity() {
 
@@ -25,9 +22,8 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
 
-        // TODO: Implement proper OAuth authentication
-        // For now, you need to manually set the token
-        // viewModel.setAuthToken("YOUR_YANDEX_MUSIC_TOKEN_HERE")
+        // Можете вставить токен здесь для быстрого тестирования:
+         viewModel.setAuthToken("REMOVED_SECRET")
 
         setContent {
             YaampTheme {
@@ -35,7 +31,17 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    MainScreen(viewModel = viewModel)
+                    val isAuthenticated by viewModel.isAuthenticated.collectAsState()
+
+                    if (isAuthenticated) {
+                        MainScreen(viewModel = viewModel)
+                    } else {
+                        AuthScreen(
+                            onTokenSubmit = { token ->
+                                viewModel.setAuthToken(token)
+                            }
+                        )
+                    }
                 }
             }
         }
