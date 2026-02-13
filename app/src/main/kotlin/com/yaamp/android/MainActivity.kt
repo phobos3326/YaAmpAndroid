@@ -23,7 +23,7 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
 
         // Можете вставить токен здесь для быстрого тестирования:
-         viewModel.setAuthToken("REMOVED_SECRET")
+        // viewModel.setAuthToken("REMOVED_SECRET")
 
         setContent {
             YaampTheme {
