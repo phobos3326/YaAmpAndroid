@@ -10,6 +10,7 @@ import com.google.common.util.concurrent.MoreExecutors
 import com.yaamp.android.data.model.Track
 import com.yaamp.android.data.repository.MusicRepository
 import com.yaamp.android.service.MusicPlaybackService
+
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -106,13 +107,19 @@ class PlayerManager(
                 try {
                     val result = repository.getStreamUrl(track.id)
                     result.getOrNull()?.let { streamUrl ->
-                        val mediaItem = MusicPlaybackService.buildMediaItem(track, streamUrl)
+                        if (repository.validateDirectUrl(streamUrl) == null) {
+                            return@let
+                        }
+                        val validatedUrl = streamUrl
+                        val mediaItem = MusicPlaybackService.buildMediaItem(track, validatedUrl)
                         mediaItems.add(mediaItem)
 
                         if (!startedPlayback) {
                             startedPlayback = true
                             withContext(Dispatchers.Main) {
                                 mediaController?.apply {
+                                    stop()
+                                    clearMediaItems()
                                     setMediaItems(listOf(mediaItem), 0, 0)
                                     prepare()
                                     play()

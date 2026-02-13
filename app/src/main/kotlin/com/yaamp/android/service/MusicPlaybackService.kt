@@ -24,7 +24,21 @@ class MusicPlaybackService : MediaSessionService() {
     override fun onCreate() {
         super.onCreate()
         
-        player = ExoPlayer.Builder(this).build()
+        val loadControl = androidx.media3.exoplayer.DefaultLoadControl.Builder()
+            .setBufferDurationsMs(
+                10_000,
+                60_000,
+                2_500,
+                5_000
+            )
+            .build()
+
+        player = ExoPlayer.Builder(this)
+            .setLoadControl(loadControl)
+            .build()
+        player.setPlaybackParameters(
+            androidx.media3.common.PlaybackParameters(1f, 1f)
+        )
         
         val sessionActivityPendingIntent = PendingIntent.getActivity(
             this,

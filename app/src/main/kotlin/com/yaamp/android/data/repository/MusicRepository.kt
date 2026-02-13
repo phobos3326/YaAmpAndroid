@@ -195,6 +195,13 @@ class MusicRepository {
             "https://$host/get-mp3/$hash/$ts$path"
         }
 
+    fun validateDirectUrl(url: String?): String? {
+        if (url.isNullOrBlank()) return null
+        if (!url.startsWith("https://")) return null
+        if (!url.contains("/get-mp3/")) return null
+        return url
+    }
+
     fun clearAuthToken() {
         currentUserId = null
         YandexMusicClient.setAuthToken("")
