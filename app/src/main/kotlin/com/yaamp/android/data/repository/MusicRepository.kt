@@ -12,14 +12,12 @@ class MusicRepository {
 
     suspend fun setAuthToken(token: String) = withContext(Dispatchers.IO) {
         YandexMusicClient.setAuthToken(token)
-        
+
         // Get user info
-        try {
-            val response = api.getAccountStatus()
-            currentUserId = response.result?.uid?.toString()
-        } catch (e: Exception) {
-            e.printStackTrace()
-        }
+        val response = api.getAccountStatus()
+        val userId = response.result?.uid?.toString()
+            ?: throw IllegalStateException(response.error ?: "Invalid auth token")
+        currentUserId = userId
     }
 
     suspend fun search(query: String, type: String = "all"): Result<SearchResult> = 
@@ -151,6 +149,11 @@ class MusicRepository {
                 xmlUrl
             }
         }
+
+    fun clearAuthToken() {
+        currentUserId = null
+        YandexMusicClient.setAuthToken("")
+    }
 
     suspend fun getUserPlaylists(): Result<List<Playlist>> = withContext(Dispatchers.IO) {
         try {

@@ -79,8 +79,9 @@ fun AuthScreen(
                 Text(
                     text = "1. Нажмите кнопку ниже\n" +
                             "2. Войдите в Яндекс\n" +
-                            "3. Скопируйте токен из URL\n" +
-                            "4. Вставьте в поле ниже",
+                            "3. Разрешите доступ\n" +
+                            "4. Приложение подхватит токен автоматически\n" +
+                            "(или вставьте токен вручную ниже)",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onPrimaryContainer
                 )
@@ -89,9 +90,13 @@ fun AuthScreen(
 
                 Button(
                     onClick = {
+                        val redirectUri = "yaamp://oauth"
                         val intent = Intent(
                             Intent.ACTION_VIEW,
-                            Uri.parse("https://oauth.yandex.ru/authorize?response_type=token&client_id=23cabbbdc6cd418abb4b39c32c41195d")
+                            Uri.parse(
+                                "https://oauth.yandex.ru/authorize?response_type=token&client_id=23cabbbdc6cd418abb4b39c32c41195d" +
+                                    "&redirect_uri=$redirectUri"
+                            )
                         )
                         context.startActivity(intent)
                     },

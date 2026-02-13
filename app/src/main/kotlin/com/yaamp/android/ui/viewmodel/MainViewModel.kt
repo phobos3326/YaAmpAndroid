@@ -76,6 +76,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
                 // Удаляем неверный токен
                 prefs.edit().remove("auth_token").apply()
+                repository.clearAuthToken()
             }
         }
     }
