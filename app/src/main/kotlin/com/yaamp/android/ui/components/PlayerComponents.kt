@@ -43,7 +43,7 @@ fun PlayerControls(
         ) {
             // Progress bar
             LinearProgressIndicator(
-                progress = { 0.5f }, // TODO: calculate actual progress
+                progress =  0.5f , // TODO: calculate actual progress
                 modifier = Modifier.fillMaxWidth(),
             )
             
