@@ -54,9 +54,10 @@ interface YandexMusicApi {
     ): YandexMusicResponse<Playlist>
 
     // Get tracks by IDs
+    @FormUrlEncoded
     @POST("tracks")
     suspend fun getTracks(
-        @Body body: TracksRequest
+        @Field("track-ids") trackIds: String
     ): YandexMusicResponse<List<Track>>
 
     // Get download info

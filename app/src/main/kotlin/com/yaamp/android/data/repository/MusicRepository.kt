@@ -90,7 +90,7 @@ class MusicRepository {
                     )
                 }
 
-                val tracksResponse = api.getTracks(TracksRequest(trackIds))
+                val tracksResponse = api.getTracks(trackIds.joinToString(","))
 
                 if (tracksResponse.result != null) {
                     Result.success(tracksResponse.result)

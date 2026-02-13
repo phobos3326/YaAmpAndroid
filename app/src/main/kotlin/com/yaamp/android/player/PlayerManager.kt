@@ -12,17 +12,21 @@ import com.yaamp.android.data.repository.MusicRepository
 import com.yaamp.android.service.MusicPlaybackService
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.withContext
 
 class PlayerManager(
     private val context: Context,
     private val repository: MusicRepository
 ) {
     private var mediaController: MediaController? = null
-    private val coroutineScope = CoroutineScope(Dispatchers.Main)
+    private val coroutineScope = CoroutineScope(Dispatchers.Main + SupervisorJob())
+    private val ioScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
 
     private val _currentTrack = MutableStateFlow<Track?>(null)
     val currentTrack: StateFlow<Track?> = _currentTrack.asStateFlow()
@@ -83,10 +87,19 @@ class PlayerManager(
         _playlist.value = tracks
         _currentIndex.value = startIndex
 
-        coroutineScope.launch {
+        if (startIndex < tracks.size) {
+            _currentTrack.value = tracks[startIndex]
+        }
+
+        ioScope.launch {
             val mediaItems = mutableListOf<MediaItem>()
-            
-            tracks.forEach { track ->
+            val seenTrackIds = mutableSetOf<String>()
+            val limitedTracks = tracks.drop(startIndex).take(30)
+
+            limitedTracks.forEach { track ->
+                if (!seenTrackIds.add(track.id)) {
+                    return@forEach
+                }
                 try {
                     val result = repository.getStreamUrl(track.id)
                     result.getOrNull()?.let { streamUrl ->
@@ -98,14 +111,14 @@ class PlayerManager(
                 }
             }
 
-            mediaController?.apply {
-                setMediaItems(mediaItems, startIndex, 0)
-                prepare()
-                play()
-            }
-
-            if (startIndex < tracks.size) {
-                _currentTrack.value = tracks[startIndex]
+            withContext(Dispatchers.Main) {
+                if (mediaItems.isNotEmpty()) {
+                    mediaController?.apply {
+                        setMediaItems(mediaItems, 0, 0)
+                        prepare()
+                        play()
+                    }
+                }
             }
         }
     }
@@ -159,5 +172,7 @@ class PlayerManager(
     fun release() {
         mediaController?.release()
         mediaController = null
+        coroutineScope.coroutineContext.cancel()
+        ioScope.coroutineContext.cancel()
     }
 }

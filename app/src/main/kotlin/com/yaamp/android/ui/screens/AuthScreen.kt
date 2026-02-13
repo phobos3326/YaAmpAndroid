@@ -95,7 +95,8 @@ fun AuthScreen(
                             Intent.ACTION_VIEW,
                             Uri.parse(
                                 "https://oauth.yandex.ru/authorize?response_type=token&client_id=23cabbbdc6cd418abb4b39c32c41195d" +
-                                    "&redirect_uri=$redirectUri"
+                                    "&redirect_uri=$redirectUri" +
+                                    "&scope=yandex_music"
                             )
                         )
                         context.startActivity(intent)

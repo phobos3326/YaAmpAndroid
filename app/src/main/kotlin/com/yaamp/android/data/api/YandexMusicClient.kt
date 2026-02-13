@@ -15,7 +15,7 @@ object YandexMusicClient {
     private var authToken: String? = null
 
     fun setAuthToken(token: String) {
-        authToken = token
+        authToken = token.trim().replace("\n", "").replace("\r", "").replace(" ", "")
     }
 
     private val authInterceptor = Interceptor { chain ->

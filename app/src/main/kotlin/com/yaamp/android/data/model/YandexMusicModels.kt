@@ -145,7 +145,3 @@ data class StationTrack(
     val displayName: String? = null
  )
 
-// Tracks request
- data class TracksRequest(
-    val trackIds: List<String> = emptyList()
- )
