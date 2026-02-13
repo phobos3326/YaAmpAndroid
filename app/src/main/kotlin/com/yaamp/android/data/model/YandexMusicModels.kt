@@ -103,7 +103,8 @@ data class YandexMusicResponse<T>(
 data class DownloadInfo(
     val codec: String,
     val bitrateInKbps: Int,
-    val src: String,
+    @SerializedName("downloadInfoUrl")
+    val downloadInfoUrl: String,
     val gain: Boolean = false,
     val preview: Boolean = false
 )

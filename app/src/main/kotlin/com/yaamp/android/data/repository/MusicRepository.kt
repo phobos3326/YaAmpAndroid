@@ -4,10 +4,17 @@ import com.yaamp.android.data.api.YandexMusicClient
 import com.yaamp.android.data.model.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import okhttp3.OkHttpClient
+import okhttp3.Request
+import java.security.MessageDigest
 
 class MusicRepository {
 
     private val api = YandexMusicClient.api
+    private val httpClient = OkHttpClient.Builder()
+        .followRedirects(true)
+        .followSslRedirects(true)
+        .build()
     private var currentUserId: String? = null
 
     suspend fun setAuthToken(token: String) = withContext(Dispatchers.IO) {
@@ -150,7 +157,7 @@ class MusicRepository {
                     ?: response.result.first()
                 
                 // Parse direct link from download info
-                val directUrl = getDirectDownloadUrl(downloadInfo.src)
+                val directUrl = getDirectDownloadUrl(downloadInfo.downloadInfoUrl)
                 Result.success(directUrl)
             } else {
                 Result.failure(Exception(response.error ?: "No download info"))
@@ -160,16 +167,32 @@ class MusicRepository {
         }
     }
 
-    private suspend fun getDirectDownloadUrl(xmlUrl: String): String = 
+    private suspend fun getDirectDownloadUrl(xmlUrl: String): String =
         withContext(Dispatchers.IO) {
-            try {
-                // This is simplified - in real app you need to parse XML and construct URL
-                // For now, return the XML URL as placeholder
-                // Real implementation would download XML, parse it, and construct direct URL
-                xmlUrl
-            } catch (e: Exception) {
-                xmlUrl
+            val request = Request.Builder()
+                .url(xmlUrl)
+                .get()
+                .build()
+
+            val response = httpClient.newCall(request).execute()
+            val body = response.body?.string().orEmpty()
+            response.close()
+
+            val host = Regex("<host>(.+?)</host>").find(body)?.groupValues?.get(1)
+            val path = Regex("<path>(.+?)</path>").find(body)?.groupValues?.get(1)
+            val ts = Regex("<ts>(.+?)</ts>").find(body)?.groupValues?.get(1)
+            val s = Regex("<s>(.+?)</s>").find(body)?.groupValues?.get(1)
+
+            if (host == null || path == null || ts == null || s == null) {
+                return@withContext xmlUrl
             }
+
+            val secret = "XGRlBW9FXlekgbPrRHuSiA" + path.drop(1) + s
+            val hash = MessageDigest.getInstance("MD5")
+                .digest(secret.toByteArray())
+                .joinToString("") { "%02x".format(it) }
+
+            "https://$host/get-mp3/$hash/$ts$path"
         }
 
     fun clearAuthToken() {

@@ -2,12 +2,17 @@ package com.yaamp.android.service
 
 import android.app.PendingIntent
 import android.content.Intent
+import androidx.annotation.OptIn
+import androidx.media3.common.C
 import androidx.media3.common.MediaItem
 import androidx.media3.common.MediaMetadata
 import androidx.media3.common.Player
+import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.session.MediaSession
 import androidx.media3.session.MediaSessionService
+import com.google.common.util.concurrent.Futures
+import com.google.common.util.concurrent.ListenableFuture
 import com.yaamp.android.MainActivity
 import com.yaamp.android.data.model.Track
 
@@ -30,6 +35,29 @@ class MusicPlaybackService : MediaSessionService() {
 
         mediaSession = MediaSession.Builder(this, player)
             .setSessionActivity(sessionActivityPendingIntent)
+            .setCallback(object : MediaSession.Callback {
+                @UnstableApi override fun onConnect(
+                    session: MediaSession,
+                    controller: MediaSession.ControllerInfo
+                ): MediaSession.ConnectionResult {
+                    val sessionCommands = MediaSession.ConnectionResult.DEFAULT_SESSION_COMMANDS
+                    val playerCommands = Player.Commands.Builder().addAllCommands().build()
+                    return MediaSession.ConnectionResult.accept(sessionCommands, playerCommands)
+                }
+
+                @OptIn(UnstableApi::class) override fun onPlaybackResumption(
+                    session: MediaSession,
+                    controller: MediaSession.ControllerInfo
+                ): ListenableFuture<MediaSession.MediaItemsWithStartPosition> {
+                    return Futures.immediateFuture(
+                        MediaSession.MediaItemsWithStartPosition(
+                            emptyList(),
+                            C.INDEX_UNSET,
+                            C.TIME_UNSET
+                        )
+                    )
+                }
+            })
             .build()
 
         player.addListener(object : Player.Listener {

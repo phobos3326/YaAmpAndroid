@@ -48,6 +48,8 @@ class PlayerManager(
     }
 
     private fun initializeController() {
+        if (mediaController != null) return
+
         val sessionToken = SessionToken(
             context,
             ComponentName(context, MusicPlaybackService::class.java)
@@ -95,6 +97,7 @@ class PlayerManager(
             val mediaItems = mutableListOf<MediaItem>()
             val seenTrackIds = mutableSetOf<String>()
             val limitedTracks = tracks.drop(startIndex).take(30)
+            var startedPlayback = false
 
             limitedTracks.forEach { track ->
                 if (!seenTrackIds.add(track.id)) {
@@ -105,25 +108,35 @@ class PlayerManager(
                     result.getOrNull()?.let { streamUrl ->
                         val mediaItem = MusicPlaybackService.buildMediaItem(track, streamUrl)
                         mediaItems.add(mediaItem)
+
+                        if (!startedPlayback) {
+                            startedPlayback = true
+                            withContext(Dispatchers.Main) {
+                                mediaController?.apply {
+                                    setMediaItems(listOf(mediaItem), 0, 0)
+                                    prepare()
+                                    play()
+                                }
+                            }
+                        } else {
+                            withContext(Dispatchers.Main) {
+                                mediaController?.addMediaItem(mediaItem)
+                            }
+                        }
                     }
                 } catch (e: Exception) {
                     e.printStackTrace()
-                }
-            }
-
-            withContext(Dispatchers.Main) {
-                if (mediaItems.isNotEmpty()) {
-                    mediaController?.apply {
-                        setMediaItems(mediaItems, 0, 0)
-                        prepare()
-                        play()
-                    }
                 }
             }
         }
     }
 
     fun playPause() {
+        if (mediaController == null) {
+            initializeController()
+            return
+        }
+
         mediaController?.let {
             if (it.isPlaying) {
                 it.pause()
@@ -134,18 +147,34 @@ class PlayerManager(
     }
 
     fun play() {
+        if (mediaController == null) {
+            initializeController()
+            return
+        }
         mediaController?.play()
     }
 
     fun pause() {
+        if (mediaController == null) {
+            initializeController()
+            return
+        }
         mediaController?.pause()
     }
 
     fun next() {
+        if (mediaController == null) {
+            initializeController()
+            return
+        }
         mediaController?.seekToNextMediaItem()
     }
 
     fun previous() {
+        if (mediaController == null) {
+            initializeController()
+            return
+        }
         mediaController?.seekToPreviousMediaItem()
     }
 
