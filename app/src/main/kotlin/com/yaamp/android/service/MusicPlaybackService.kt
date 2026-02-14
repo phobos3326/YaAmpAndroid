@@ -26,16 +26,23 @@ class MusicPlaybackService : MediaSessionService() {
         
         val loadControl = androidx.media3.exoplayer.DefaultLoadControl.Builder()
             .setBufferDurationsMs(
-                10_000,
-                60_000,
-                2_500,
-                5_000
+                30_000,
+                120_000,
+                5_000,
+                10_000
             )
             .build()
 
         player = ExoPlayer.Builder(this)
             .setLoadControl(loadControl)
             .build()
+        player.setAudioAttributes(
+            androidx.media3.common.AudioAttributes.Builder()
+                .setUsage(C.USAGE_MEDIA)
+                .setContentType(C.AUDIO_CONTENT_TYPE_MUSIC)
+                .build(),
+            true
+        )
         player.setPlaybackParameters(
             androidx.media3.common.PlaybackParameters(1f, 1f)
         )

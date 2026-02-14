@@ -4,6 +4,7 @@ import com.yaamp.android.data.api.YandexMusicClient
 import com.yaamp.android.data.model.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import android.util.Log
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import java.security.MessageDigest
@@ -192,7 +193,9 @@ class MusicRepository {
                 .digest(secret.toByteArray())
                 .joinToString("") { "%02x".format(it) }
 
-            "https://$host/get-mp3/$hash/$ts$path"
+            val directUrl = "https://$host/get-mp3/$hash/$ts$path"
+            Log.d("MusicRepository", "Direct URL: $directUrl")
+            directUrl
         }
 
     fun validateDirectUrl(url: String?): String? {
