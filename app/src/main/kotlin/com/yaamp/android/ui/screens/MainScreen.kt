@@ -128,7 +128,7 @@ fun MainScreen(
                     playlist = playlist,
                     currentIndex = currentIndex,
                     onTrackClick = { index ->
-                        // TODO: seek to track
+                        viewModel.playerManager.playFromIndex(index)
                     }
                 )
             }

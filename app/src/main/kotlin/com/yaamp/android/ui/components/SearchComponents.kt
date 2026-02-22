@@ -246,13 +246,26 @@ fun TrackItem(
     track: Track,
     onClick: () -> Unit,
     showAlbumArt: Boolean = true,
+    isActive: Boolean = false,
     modifier: Modifier = Modifier
 ) {
+    val containerColor = if (isActive) {
+        MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
+    } else {
+        MaterialTheme.colorScheme.surface
+    }
+    val titleStyle = if (isActive) {
+        MaterialTheme.typography.bodyLarge.copy(color = MaterialTheme.colorScheme.primary)
+    } else {
+        MaterialTheme.typography.bodyLarge
+    }
+
     Card(
         modifier = modifier
             .fillMaxWidth()
             .clickable(onClick = onClick),
-        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
+        colors = CardDefaults.cardColors(containerColor = containerColor)
     ) {
         Row(
             modifier = Modifier
@@ -276,7 +289,7 @@ fun TrackItem(
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = track.title,
-                    style = MaterialTheme.typography.bodyLarge,
+                    style = titleStyle,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
@@ -316,6 +329,7 @@ fun PlaylistView(
                 track = track,
                 onClick = { onTrackClick(index) },
                 showAlbumArt = index != currentIndex,
+                isActive = index == currentIndex,
                 modifier = Modifier.fillMaxWidth()
             )
         }

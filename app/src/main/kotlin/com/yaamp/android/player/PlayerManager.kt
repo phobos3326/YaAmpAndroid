@@ -138,6 +138,27 @@ class PlayerManager(
         }
     }
 
+    fun playFromIndex(index: Int) {
+        val tracks = _playlist.value
+        if (tracks.isEmpty() || index !in tracks.indices) {
+            return
+        }
+        if (mediaController == null) {
+            initializeController()
+        }
+        mediaController?.let { controller ->
+            val hasMediaItems = controller.mediaItemCount > 0
+            if (hasMediaItems && controller.mediaItemCount == tracks.size) {
+                controller.seekTo(index, 0)
+                controller.play()
+                _currentIndex.value = index
+                _currentTrack.value = tracks[index]
+                return
+            }
+        }
+        setPlaylist(tracks, index)
+    }
+
     fun playPause() {
         if (mediaController == null) {
             initializeController()
