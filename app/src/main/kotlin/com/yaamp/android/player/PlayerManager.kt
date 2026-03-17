@@ -75,24 +75,32 @@ class PlayerManager(
             override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
                 updateCurrentTrack()
             }
+
+            override fun onPlaybackStateChanged(playbackState: Int) {
+                if (playbackState == Player.STATE_READY && mediaController?.isPlaying == true) {
+                    // Обновляем состояние когда плеер готов к воспроизведению
+                    updateCurrentTrack()
+                }
+            }
         })
     }
 
     private fun updateCurrentTrack() {
-        val currentIndex = mediaController?.currentMediaItemIndex ?: 0
-        _currentIndex.value = currentIndex
-        if (currentIndex < _playlist.value.size) {
-            _currentTrack.value = _playlist.value[currentIndex]
+        val controller = mediaController ?: return
+        val mediaItem = controller.currentMediaItem ?: return
+        val mediaIndex = controller.currentMediaItemIndex
+        
+        // Находим трек по mediaId
+        val track = _playlist.value.find { it.id == mediaItem.mediaId }
+        if (track != null) {
+            _currentTrack.value = track
+            _currentIndex.value = mediaIndex
         }
     }
 
     fun setPlaylist(tracks: List<Track>, startIndex: Int = 0) {
         _playlist.value = tracks
         _currentIndex.value = startIndex
-
-        if (startIndex < tracks.size) {
-            _currentTrack.value = tracks[startIndex]
-        }
 
         ioScope.launch {
             val mediaItems = mutableListOf<MediaItem>()
@@ -116,7 +124,9 @@ class PlayerManager(
 
                         if (!startedPlayback) {
                             startedPlayback = true
+                            // Обновляем текущий трек только после успешной загрузки URL
                             withContext(Dispatchers.Main) {
+                                _currentTrack.value = track
                                 mediaController?.apply {
                                     stop()
                                     clearMediaItems()
