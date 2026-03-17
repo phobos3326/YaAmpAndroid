@@ -157,6 +157,8 @@ class PlayerManager(
             }
         }
         setPlaylist(tracks, index)
+        // Явно запускаем воспроизведение после установки плейлиста
+        play()
     }
 
     fun playPause() {

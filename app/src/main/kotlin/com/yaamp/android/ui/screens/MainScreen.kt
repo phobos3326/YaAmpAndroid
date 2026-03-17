@@ -24,14 +24,14 @@ fun MainScreen(
     val currentIndex by viewModel.currentIndex.collectAsState()
     val searchResults by viewModel.searchResults.collectAsState()
     val uiState by viewModel.uiState.collectAsState()
-    
-    var showFullPlayer by remember { mutableStateOf(false) }
+
+    var isPlayerExpanded by remember { mutableStateOf(false) }
     var searchQuery by remember { mutableStateOf("") }
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { 
+                title = {
                     Text(
                         text = when (currentTab) {
                             0 -> "Home"
@@ -57,7 +57,9 @@ fun MainScreen(
                         onPlayPause = { viewModel.playerManager.playPause() },
                         onNext = { viewModel.playerManager.next() },
                         onPrevious = { viewModel.playerManager.previous() },
-                        onExpand = { showFullPlayer = true }
+                        onExpand = { isPlayerExpanded = true },
+                        onCollapse = { isPlayerExpanded = false },
+                        isExpanded = isPlayerExpanded
                     )
                 }
 
@@ -109,7 +111,7 @@ fun MainScreen(
                 1 -> SearchScreen(
                     query = searchQuery,
                     searchResults = searchResults,
-                    onQueryChange = { 
+                    onQueryChange = {
                         searchQuery = it
                         viewModel.search(it)
                     },
@@ -122,6 +124,7 @@ fun MainScreen(
                     onTrackClick = { track ->
                         // Play single track
                         viewModel.playerManager.setPlaylist(listOf(track))
+                        viewModel.playerManager.play()
                     }
                 )
                 2 -> PlaylistScreen(
@@ -150,7 +153,7 @@ fun MainScreen(
     }
 
     // Full player overlay
-    if (showFullPlayer) {
+    if (isPlayerExpanded) {
         FullPlayerScreen(
             currentTrack = currentTrack,
             isPlaying = isPlaying,
@@ -163,7 +166,8 @@ fun MainScreen(
                 val position = (viewModel.playerManager.getDuration() * progress).toLong()
                 viewModel.playerManager.seekTo(position)
             },
-            onClose = { showFullPlayer = false }
+            onClose = { isPlayerExpanded = false },
+            onCollapse = { isPlayerExpanded = false }
         )
     }
 }

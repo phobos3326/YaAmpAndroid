@@ -27,6 +27,8 @@ fun PlayerControls(
     onNext: () -> Unit,
     onPrevious: () -> Unit,
     onExpand: () -> Unit,
+    onCollapse: () -> Unit,
+    isExpanded: Boolean = false,
     modifier: Modifier = Modifier
 ) {
     Card(
@@ -46,7 +48,7 @@ fun PlayerControls(
                 progress =  0.5f , // TODO: calculate actual progress
                 modifier = Modifier.fillMaxWidth(),
             )
-            
+
             Spacer(modifier = Modifier.height(8.dp))
 
             Row(
@@ -127,12 +129,24 @@ fun PlayerControls(
                             contentDescription = "Next"
                         )
                     }
+
+                    // Кнопка сворачивания/разворачивания
+                    IconButton(
+                        onClick = { if (isExpanded) onCollapse() else onExpand() },
+                        modifier = Modifier.size(40.dp)
+                    ) {
+                        Icon(
+                            imageVector = if (isExpanded) Icons.Filled.KeyboardArrowDown else Icons.Filled.KeyboardArrowUp,
+                            contentDescription = if (isExpanded) "Свернуть" else "Развернуть"
+                        )
+                    }
                 }
             }
         }
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun FullPlayerScreen(
     currentTrack: Track?,
@@ -144,37 +158,57 @@ fun FullPlayerScreen(
     onPrevious: () -> Unit,
     onSeek: (Float) -> Unit,
     onClose: () -> Unit,
+    onCollapse: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    Column(
-        modifier = modifier
-            .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background)
-            .padding(16.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        // Close button
-        IconButton(
-            onClick = onClose,
-            modifier = Modifier.align(Alignment.Start)
-        ) {
-            Icon(
-                imageVector = Icons.Filled.KeyboardArrowDown,
-                contentDescription = "Close"
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text("Now Playing") },
+                navigationIcon = {
+                    IconButton(onClick = { onClose(); onCollapse() }) {
+                        Icon(
+                            imageVector = Icons.Filled.ArrowBack,
+                            contentDescription = "Назад"
+                        )
+                    }
+                },
+                actions = {
+                    IconButton(onClick = { onClose(); onCollapse() }) {
+                        Icon(
+                            imageVector = Icons.Filled.KeyboardArrowDown,
+                            contentDescription = "Свернуть"
+                        )
+                    }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.primaryContainer,
+                    titleContentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                    navigationIconContentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                    actionIconContentColor = MaterialTheme.colorScheme.onPrimaryContainer
+                )
             )
         }
+    ) { paddingValues ->
+        Column(
+            modifier = modifier
+                .fillMaxSize()
+                .background(MaterialTheme.colorScheme.background)
+                .padding(paddingValues)
+                .padding(horizontal = 16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Spacer(modifier = Modifier.height(16.dp))
 
-        Spacer(modifier = Modifier.height(32.dp))
-
-        // Album art
-        AsyncImage(
-            model = currentTrack?.getCoverUrl("400x400"),
-            contentDescription = "Album art",
-            modifier = Modifier
-                .size(300.dp)
-                .clip(RoundedCornerShape(8.dp)),
-            contentScale = ContentScale.Crop
-        )
+            // Album art
+            AsyncImage(
+                model = currentTrack?.getCoverUrl("400x400"),
+                contentDescription = "Album art",
+                modifier = Modifier
+                    .size(280.dp)
+                    .clip(RoundedCornerShape(16.dp)),
+                contentScale = ContentScale.Crop
+            )
 
         Spacer(modifier = Modifier.height(32.dp))
 
@@ -199,7 +233,7 @@ fun FullPlayerScreen(
         // Seek bar
         Column {
             var sliderPosition by remember { mutableFloatStateOf(0f) }
-            
+
             LaunchedEffect(currentPosition) {
                 if (duration > 0) {
                     sliderPosition = currentPosition.toFloat() / duration.toFloat()
@@ -208,7 +242,7 @@ fun FullPlayerScreen(
 
             Slider(
                 value = sliderPosition,
-                onValueChange = { 
+                onValueChange = {
                     sliderPosition = it
                     onSeek(it)
                 },
@@ -277,6 +311,9 @@ fun FullPlayerScreen(
                 )
             }
         }
+
+        Spacer(modifier = Modifier.height(32.dp))
+    }
     }
 }
 
